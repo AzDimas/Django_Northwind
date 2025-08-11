@@ -2,12 +2,28 @@
 <nav class="navbar navbar-dark bg-dark"><div class="container-fluid"><a class="navbar-brand" href="#">Northwind DW Dashboard</a></div></nav>
 <main class="container mt-4"><h1 class="mb-4">📊 Laporan Analitik</h1><p>Pilih laporan yang ingin Anda lihat. Data ini dihasilkan dari Data Warehouse.</p>
 <div class="list-group">
-  <a href="{% url 'usa_employee_phone_book' %}" class="list-group-item list-group-item-action">USA Employee Phone Book</a>
-  <a href="{% url 'territories_with_all_employees' %}" class="list-group-item list-group-item-action">Territories With All Employees</a>
-  <a href="{% url 'depleted_category' %}" class="list-group-item list-group-item-action">Depleted Category</a>
-  <a href="{% url 'fragile_products' %}" class="list-group-item list-group-item-action">Fragile Products</a>
-  <a href="{% url 'european_product_average_price' %}" class="list-group-item list-group-item-action">European Product Average Price</a>
-  <a href="{% url 'favourite_shipper' %}" class="list-group-item list-group-item-action">Favourite Shipper</a>
-  <a href="{% url 'total_employee_in_every_region' %}" class="list-group-item list-group-item-action">Total Employee In Every Region</a>
-  <a href="{% url 'general_phone_book' %}" class="list-group-item list-group-item-action">General Phone Book</a>
+  {% if perms.reports.view_usa_employee %}
+    <a href="{% url 'usa_employee_phone_book' %}" class="list-group-item list-group-item-action">USA Employee Phone Book</a>
+  {% endif %}
+  {% if perms.reports.view_territories_employees %}
+    <a href="{% url 'territories_with_all_employees' %}" class="list-group-item list-group-item-action">Territories With All Employees</a>
+  {% endif %}
+  {% if perms.reports.view_depleted_category %}
+    <a href="{% url 'depleted_category' %}" class="list-group-item list-group-item-action">Depleted Category</a>
+  {% endif %}
+  {% if perms.reports.view_fragile_products %}
+    <a href="{% url 'fragile_products' %}" class="list-group-item list-group-item-action">Fragile Products</a>
+  {% endif %}
+  {% if perms.reports.view_european_product_price %}
+    <a href="{% url 'european_product_average_price' %}" class="list-group-item list-group-item-action">European Product Average Price</a>
+  {% endif %}
+  {% if perms.reports.view_favourite_shipper %}
+    <a href="{% url 'favourite_shipper' %}" class="list-group-item list-group-item-action">Favourite Shipper</a>
+  {% endif %}
+  {% if perms.reports.view_total_employee_region %}
+    <a href="{% url 'total_employee_in_every_region' %}" class="list-group-item list-group-item-action">Total Employee In Every Region</a>
+  {% endif %}
+  {% if perms.reports.view_general_phonebook %}
+    <a href="{% url 'general_phone_book' %}" class="list-group-item list-group-item-action">General Phone Book</a>
+  {% endif %}
 </div></main></body></html>

@@ -1,40 +1,118 @@
-from django.shortcuts import render
-from .models import USAEmployeePhoneBook, TerritoriesWithAllEmployees, DepletedCategory, FragileProducts, EuropeanProductAveragePrice, FavouriteShipper, TotalEmployeeInEveryRegion, GeneralPhoneBook
+from rest_framework import generics, serializers, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authentication import TokenAuthentication
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
-# Create your views here.
+from .models import (
+    USAEmployeePhoneBook, TerritoriesWithAllEmployees, DepletedCategory,
+    FragileProducts, EuropeanProductAveragePrice, FavouriteShipper,
+    TotalEmployeeInEveryRegion, GeneralPhoneBook
+)
+from .permissions import HasRole, HasPermissionCode
 
-def home(request):
-    return render(request, 'reports/home.html')
 
-def usa_employee_phone_book(request):
-    data = USAEmployeePhoneBook.objects.all()
-    return render(request, 'reports/usa_employee_phone_book.html', {'data': data, 'title': 'USA Employee Phone Book'})
+# =============================
+# LOGIN & LOGOUT
+# =============================
+class ObtainTokenView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
-def territories_with_all_employees(request):
-    data = TerritoriesWithAllEmployees.objects.all()
-    return render(request, 'reports/territories_with_all_employees.html', {'data': data, 'title': 'Territories With All Employees'})
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        user = authenticate(username=username, password=password)
+        if user is None:
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key})
 
-def depleted_category(request):
-    data = DepletedCategory.objects.all()
-    return render(request, 'reports/depleted_category.html', {'data': data, 'title': 'Depleted Category'})
 
-def fragile_products(request):
-    data = FragileProducts.objects.all()
-    return render(request, 'reports/fragile_products.html', {'data': data, 'title': 'Fragile Products'})
+class RevokeTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
-def european_product_average_price(request):
-    data = EuropeanProductAveragePrice.objects.all()
-    return render(request, 'reports/european_product_average_price.html', {'data': data, 'title': 'European Product Average Price'})
+    def post(self, request):
+        Token.objects.filter(user=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-def favourite_shipper(request):
-    data = FavouriteShipper.objects.all()
-    return render(request, 'reports/favourite_shipper.html', {'data': data, 'title': 'Favourite Shipper'})
 
-def total_employee_in_every_region(request):
-    data = TotalEmployeeInEveryRegion.objects.all()
-    return render(request, 'reports/total_employee_in_every_region.html', {'data': data, 'title': 'Total Employee In Every Region'})
+# =============================
+# VIEW UNTUK ADMIN SAJA (ROLE)
+# =============================
+class AdminOnlyView(APIView):
+    permission_classes = [HasRole]
+    authentication_classes = [TokenAuthentication]
+    required_roles = ['Admin']
 
-def general_phone_book(request):
-    data = GeneralPhoneBook.objects.all()
-    return render(request, 'reports/general_phone_book.html', {'data': data, 'title': 'General Phone Book'})
-    
+    def get(self, request):
+        return Response({"ok": True, "message": "Halo Admin"})
+
+
+# =============================
+# BASE REPORT VIEW
+# =============================
+class BaseReportView(generics.ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    model = None  # wajib di-override di subclass
+
+    def get_queryset(self):
+        return self.model.objects.all()
+
+    def get_serializer_class(self):
+        """Bikin serializer dinamis sesuai model"""
+        Meta = type('Meta', (), {'model': self.model, 'fields': '__all__'})
+        serializer_class = type(f'{self.model.__name__}Serializer', (serializers.ModelSerializer,), {'Meta': Meta})
+        return serializer_class
+
+
+# =============================
+# VIEW REPORTS (Permission Per-View)
+# =============================
+class USAEmployeePhoneBookView(BaseReportView):
+    model = USAEmployeePhoneBook
+    required_permission_codes = ["view_usaemployeephonebook"]
+
+
+class TerritoriesWithAllEmployeesView(BaseReportView):
+    model = TerritoriesWithAllEmployees
+    required_permission_codes = ["view_territorieswithemployees"]
+
+
+class DepletedCategoryView(BaseReportView):
+    model = DepletedCategory
+    permission_classes = [HasPermissionCode]
+    required_permission_codes = ['view_depletedcategory']
+
+
+class FragileProductsView(BaseReportView):
+    model = FragileProducts
+    permission_classes = [HasPermissionCode]
+    required_permission_codes = ['view_fragileproducts']
+
+
+class EuropeanProductAveragePriceView(BaseReportView):
+    model = EuropeanProductAveragePrice
+    permission_classes = [HasPermissionCode]
+    required_permission_codes = ['view_europeanproductaverageprice']
+
+
+class FavouriteShipperView(BaseReportView):
+    model = FavouriteShipper
+    permission_classes = [HasPermissionCode]
+    required_permission_codes = ['view_favouriteshipper']
+
+
+class TotalEmployeeInEveryRegionView(BaseReportView):
+    model = TotalEmployeeInEveryRegion
+    permission_classes = [HasPermissionCode]
+    required_permission_codes = ['view_totalemployeeineveryregion']
+
+
+class GeneralPhoneBookView(BaseReportView):
+    model = GeneralPhoneBook
+    permission_classes = [HasPermissionCode]
+    required_permission_codes = ['view_generalphonebook']
