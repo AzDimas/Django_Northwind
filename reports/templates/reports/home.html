@@ -1,29 +1,102 @@
-<!DOCTYPE html><html><head><title>Dashboard</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>
-<nav class="navbar navbar-dark bg-dark"><div class="container-fluid"><a class="navbar-brand" href="#">Northwind DW Dashboard</a></div></nav>
-<main class="container mt-4"><h1 class="mb-4">📊 Laporan Analitik</h1><p>Pilih laporan yang ingin Anda lihat. Data ini dihasilkan dari Data Warehouse.</p>
-<div class="list-group">
-  {% if perms.reports.view_usa_employee %}
-    <a href="{% url 'usa_employee_phone_book' %}" class="list-group-item list-group-item-action">USA Employee Phone Book</a>
-  {% endif %}
-  {% if perms.reports.view_territories_employees %}
-    <a href="{% url 'territories_with_all_employees' %}" class="list-group-item list-group-item-action">Territories With All Employees</a>
-  {% endif %}
-  {% if perms.reports.view_depleted_category %}
-    <a href="{% url 'depleted_category' %}" class="list-group-item list-group-item-action">Depleted Category</a>
-  {% endif %}
-  {% if perms.reports.view_fragile_products %}
-    <a href="{% url 'fragile_products' %}" class="list-group-item list-group-item-action">Fragile Products</a>
-  {% endif %}
-  {% if perms.reports.view_european_product_price %}
-    <a href="{% url 'european_product_average_price' %}" class="list-group-item list-group-item-action">European Product Average Price</a>
-  {% endif %}
-  {% if perms.reports.view_favourite_shipper %}
-    <a href="{% url 'favourite_shipper' %}" class="list-group-item list-group-item-action">Favourite Shipper</a>
-  {% endif %}
-  {% if perms.reports.view_total_employee_region %}
-    <a href="{% url 'total_employee_in_every_region' %}" class="list-group-item list-group-item-action">Total Employee In Every Region</a>
-  {% endif %}
-  {% if perms.reports.view_general_phonebook %}
-    <a href="{% url 'general_phone_book' %}" class="list-group-item list-group-item-action">General Phone Book</a>
-  {% endif %}
-</div></main></body></html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script>
+        // Cek token di localStorage
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+            window.location.href = "{% url 'login_page' %}";
+        }
+
+        // Fungsi untuk verifikasi token
+        async function verifyToken() {
+            try {
+                const res = await fetch("/api/verify-token/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Token " + token
+                    }
+                });
+
+                if (res.status === 401) {
+                    alert("Sesi login habis. Silakan login ulang.");
+                    localStorage.removeItem("authToken");
+                    window.location.href = "{% url 'login_page' %}";
+                }
+            } catch (err) {
+                console.error("Error verifikasi token:", err);
+            }
+        }
+
+        // Fungsi untuk logout
+        async function handleLogout() {
+            try {
+                // Kirim request logout ke backend
+                await fetch("{% url 'api-logout' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Token " + token
+                    }
+                });
+                
+                // Hapus token dan redirect ke login
+                localStorage.removeItem("authToken");
+                window.location.href = "{% url 'login_page' %}";
+            } catch (error) {
+                console.error("Error saat logout:", error);
+                localStorage.removeItem("authToken");
+                window.location.href = "{% url 'login_page' %}";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", verifyToken);
+    </script>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Northwind DW Dashboard</a>
+        <button class="btn btn-outline-light" onclick="handleLogout()">Logout</button>
+    </div>
+</nav>
+
+<main class="container mt-4">
+    <h1 class="mb-4">📊 Laporan Analitik</h1>
+    <p>Pilih laporan yang ingin Anda lihat. Data ini dihasilkan dari Data Warehouse.</p>
+
+    <div class="list-group">
+      {% if perms.reports.view_usaemployeephonebook %}
+        <a href="{% url 'usa_employee_phone_book_html' %}" class="list-group-item list-group-item-action">USA Employee Phone Book</a>
+      {% endif %}
+
+      {% if perms.reports.view_territorieswithallemployees %}
+        <a href="{% url 'territories_with_all_employees_html' %}" class="list-group-item list-group-item-action">Territories With All Employees</a>
+      {% endif %}
+
+      {% if perms.reports.viewdepleted_category %}
+        <a href="{% url 'depleted_category_html' %}" class="list-group-item list-group-item-action">Depleted Category</a>
+      {% endif %}
+      {% if perms.reports.view_fragileproducts %}
+        <a href="{% url 'fragile_products_html' %}" class="list-group-item list-group-item-action">Fragile Products</a>
+      {% endif %}
+      {% if perms.reports.view_europeanproductprice %}
+        <a href="{% url 'european_product_avg_price_html' %}" class="list-group-item list-group-item-action">European Product Average Price</a>
+      {% endif %}
+      {% if perms.reports.view_favouriteshipper %}
+        <a href="{% url 'favourite_shipper_html' %}" class="list-group-item list-group-item-action">Favourite Shipper</a>
+      {% endif %}
+      {% if perms.reports.view_totalemployeeregion %}
+        <a href="{% url 'total_employee_in_every_region_html' %}" class="list-group-item list-group-item-action">Total Employee In Every Region</a>
+      {% endif %}
+      {% if perms.reports.view_generalphonebook %}
+        <a href="{% url 'general_phone_book_html' %}" class="list-group-item list-group-item-action">General Phone Book</a>
+      {% endif %}
+    </div>
+</main>
+</body>
+</html>
