@@ -3,7 +3,11 @@
 <head>
     <title>Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <style>
+        .permission-denied {
+            display: none; /* Awalnya sembunyikan semua menu */
+        }
+    </style>
     <script>
         // Cek token di localStorage
         const token = localStorage.getItem("authToken");
@@ -11,8 +15,8 @@
             window.location.href = "{% url 'login_page' %}";
         }
 
-        // Fungsi untuk verifikasi token
-        async function verifyToken() {
+        // Fungsi untuk verifikasi token dan permission
+        async function verifyAccess() {
             try {
                 const res = await fetch("/api/verify-token/", {
                     method: "POST",
@@ -26,16 +30,46 @@
                     alert("Sesi login habis. Silakan login ulang.");
                     localStorage.removeItem("authToken");
                     window.location.href = "{% url 'login_page' %}";
+                    return false;
                 }
+                
+                const data = await res.json();
+                if (data && data.valid) {
+                    // Tampilkan menu sesuai permission
+                    showAllowedMenus(data.permissions);
+                    return true;
+                }
+                return false;
             } catch (err) {
                 console.error("Error verifikasi token:", err);
+                return false;
+            }
+        }
+
+        // Fungsi untuk menampilkan menu yang diizinkan
+        function showAllowedMenus(permissions) {
+            const menuItems = {
+                'usa_employee': 'reports.view_usaemployeephonebook',
+                'territories': 'reports.view_territorieswithallemployees',
+                'depleted': 'reports.view_depletedcategory',
+                'fragile': 'reports.view_fragileproducts',
+                'european': 'reports.view_europeanproductaverageprice',
+                'shipper': 'reports.view_favouriteshipper',
+                'region': 'reports.view_totalemployeeineveryregion',
+                'general': 'reports.view_generalphonebook'
+            };
+
+            for (const [menuId, perm] of Object.entries(menuItems)) {
+                const menuElement = document.getElementById(menuId);
+                if (menuElement && permissions.includes(perm)) {
+                    menuElement.classList.remove('permission-denied');
+                }
             }
         }
 
         // Fungsi untuk logout
         async function handleLogout() {
             try {
-                // Kirim request logout ke backend
                 await fetch("{% url 'api-logout' %}", {
                     method: "POST",
                     headers: {
@@ -44,7 +78,6 @@
                     }
                 });
                 
-                // Hapus token dan redirect ke login
                 localStorage.removeItem("authToken");
                 window.location.href = "{% url 'login_page' %}";
             } catch (error) {
@@ -54,7 +87,7 @@
             }
         }
 
-        document.addEventListener("DOMContentLoaded", verifyToken);
+        document.addEventListener("DOMContentLoaded", verifyAccess);
     </script>
 </head>
 <body>
@@ -70,32 +103,14 @@
     <p>Pilih laporan yang ingin Anda lihat. Data ini dihasilkan dari Data Warehouse.</p>
 
     <div class="list-group">
-      {% if perms.reports.view_usaemployeephonebook %}
-        <a href="{% url 'usa_employee_phone_book_html' %}" class="list-group-item list-group-item-action">USA Employee Phone Book</a>
-      {% endif %}
-
-      {% if perms.reports.view_territorieswithallemployees %}
-        <a href="{% url 'territories_with_all_employees_html' %}" class="list-group-item list-group-item-action">Territories With All Employees</a>
-      {% endif %}
-
-      {% if perms.reports.viewdepleted_category %}
-        <a href="{% url 'depleted_category_html' %}" class="list-group-item list-group-item-action">Depleted Category</a>
-      {% endif %}
-      {% if perms.reports.view_fragileproducts %}
-        <a href="{% url 'fragile_products_html' %}" class="list-group-item list-group-item-action">Fragile Products</a>
-      {% endif %}
-      {% if perms.reports.view_europeanproductprice %}
-        <a href="{% url 'european_product_avg_price_html' %}" class="list-group-item list-group-item-action">European Product Average Price</a>
-      {% endif %}
-      {% if perms.reports.view_favouriteshipper %}
-        <a href="{% url 'favourite_shipper_html' %}" class="list-group-item list-group-item-action">Favourite Shipper</a>
-      {% endif %}
-      {% if perms.reports.view_totalemployeeregion %}
-        <a href="{% url 'total_employee_in_every_region_html' %}" class="list-group-item list-group-item-action">Total Employee In Every Region</a>
-      {% endif %}
-      {% if perms.reports.view_generalphonebook %}
-        <a href="{% url 'general_phone_book_html' %}" class="list-group-item list-group-item-action">General Phone Book</a>
-      {% endif %}
+        <a id="usa_employee" href="{% url 'usa_employee_phone_book_html' %}" class="list-group-item list-group-item-action permission-denied">USA Employee Phone Book</a>
+        <a id="territories" href="{% url 'territories_with_all_employees_html' %}" class="list-group-item list-group-item-action permission-denied">Territories With All Employees</a>
+        <a id="depleted" href="{% url 'depleted_category_html' %}" class="list-group-item list-group-item-action permission-denied">Depleted Category</a>
+        <a id="fragile" href="{% url 'fragile_products_html' %}" class="list-group-item list-group-item-action permission-denied">Fragile Products</a>
+        <a id="european" href="{% url 'european_product_avg_price_html' %}" class="list-group-item list-group-item-action permission-denied">European Product Average Price</a>
+        <a id="shipper" href="{% url 'favourite_shipper_html' %}" class="list-group-item list-group-item-action permission-denied">Favourite Shipper</a>
+        <a id="region" href="{% url 'total_employee_in_every_region_html' %}" class="list-group-item list-group-item-action permission-denied">Total Employee In Every Region</a>
+        <a id="general" href="{% url 'general_phone_book_html' %}" class="list-group-item list-group-item-action permission-denied">General Phone Book</a>
     </div>
 </main>
 </body>
